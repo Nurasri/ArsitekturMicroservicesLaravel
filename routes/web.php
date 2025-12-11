@@ -8,6 +8,7 @@ Route::get('/', function () {
 });
 
 // Tambahkan prefix 'api' agar URL menjadi /api/users
-Route::prefix('api')->group(function () {
-    Route::get('/users', [UserController::class, 'index']);
-});
+// Route::prefix('api')->group(function () {
+//     Route::get('/users', [UserController::class, 'index']);
+//     Route::post('/users', [UserController::class, 'store']);
+// });

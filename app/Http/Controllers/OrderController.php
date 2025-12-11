@@ -11,42 +11,40 @@ class OrderController extends Controller
 {
     public function index()
     {
-        // Log bahwa permintaan masuk
-        Log::info('Request masuk ke OrderService - index()');
+        Log::info('OrderService: index called');
 
-        // Mencoba memanggil User Service
-        Log::info('Mengirim request ke User Service...');
+        // Ambil correlation ID dari request
+        $correlationId = request()->attributes->get('correlation_id');
 
-        // Ambil data user dari User Service (API Provider)
-        $response = Http::get('http://127.0.0.1:8001/api/users');
+        Log::info("OrderService: forwarding request to UserService", [
+            'correlation_id' => $correlationId
+        ]);
 
-        // Jika gagal menghubungi user service
+        // Kirim correlation ID ke User Service
+        $response = Http::withHeaders([
+            'X-Correlation-ID' => $correlationId
+        ])->get('http://127.0.0.1:8001/api/users');
+
         if ($response->failed()) {
-            Log::error('User Service tidak dapat dihubungi!');
+            Log::error("OrderService: UserService unreachable");
             return response()->json(['error' => 'User Service Unavailable'], 503);
         }
 
-        // Log status sukses
-        Log::info('Berhasil menerima response dari User Service');
+        Log::info("OrderService: received response from UserService");
 
-        // Data user hasil dari API
         $users = $response->json();
 
-        // Data order (databases)
         $orders = Order::all();
 
-        // Gabungkan data order dan data user berdasarkan user_id
+        // Gabung order dengan user
         $merged = collect($orders)->map(function ($order) use ($users) {
-            $user = collect($users)->firstWhere('id', $order['user_id']);
-            $order['user'] = $user;
+            $order['user'] = collect($users)->firstWhere('id', $order->user_id);
             return $order;
         });
 
-        Log::info('OrderService berhasil memproses data order');
-
-        // Kembalikan hasil gabungan dalam format JSON
         return response()->json($merged);
     }
+
     public function store(Request $request)
     {
         Log::info('Request masuk ke OrderService - store()', [

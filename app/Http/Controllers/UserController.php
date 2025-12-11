@@ -20,6 +20,7 @@ class UserController extends Controller
             'total' => count($users)
         ]);
 
+        Log::info('User list requested');
         return response()->json($users);
     }
 
